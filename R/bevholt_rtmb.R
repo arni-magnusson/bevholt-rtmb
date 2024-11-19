@@ -2,14 +2,14 @@ library(RTMB)
 
 source("../data/recdata.R")
 
-objfun <- function(par)
+objfun <- function(par, data)
 {
   Rmax <- exp(par[["logRmax"]])
   S50 <- exp(par[["logS50"]])
   sigma <- exp(par[["logSigma"]])
 
-  R <- recdata$R
-  S <- recdata$S
+  R <- data$R
+  S <- data$S
 
   Rhat <- Rmax * S / (S + S50)
   nll <- -sum(dnorm(log(R), log(Rhat), sigma, TRUE))
@@ -17,8 +17,10 @@ objfun <- function(par)
   nll
 }
 
+bevholt <- function(f, data) function(par) f(par, data)
+
 par <- list(logRmax=0, logS50=0, logSigma=0)
-model <- MakeADFun(objfun, par, silent=TRUE)
+model <- MakeADFun(bevholt(objfun, recdata), par, silent=TRUE)
 fit <- nlminb(model$par, model$fn, model$gr)
 rep <- summary(sdreport(model))
 
